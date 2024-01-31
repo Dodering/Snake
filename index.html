@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Snake Game</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #282c34;
+      color: #61dafb;
+      font-family: 'Arial', sans-serif;
+    }
+
+    #game-container {
+      text-align: center;
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+      padding: 20px;
+    }
+
+    canvas {
+      border: 4px solid #61dafb;
+      border-radius: 8px;
+      background-color: #f0f0f0;
+      margin-top: 20px;
+      box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 18px;
+      background-color: #61dafb;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s, box-shadow 0.3s;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    button:hover {
+      background-color: #4fa3d1;
+    }
+
+    label {
+      margin-top: 10px;
+      display: block;
+      font-size: 16px;
+      color: #61dafb;
+    }
+
+    input[type="color"] {
+      margin-top: 5px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <h1 style="color: #61dafb; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);">Snake Game</h1>
+    <canvas id="snakeCanvas" width="400" height="500"></canvas>
+    <label for="snakeColor">Couleur du serpent:</label>
+    <input type="color" id="snakeColor" value="#61dafb">
+    <button onclick="changeObjective()">Changer l'objectif</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("snakeCanvas");
+    const ctx = canvas.getContext("2d");
+    const snakeColorInput = document.getElementById("snakeColor");
+
+    let snakeColor = snakeColorInput.value;
+
+    snakeColorInput.addEventListener("input", function() {
+      snakeColor = this.value;
+      // Mettre à jour la couleur du serpent dans le contexte de rendu
+      ctx.fillStyle = snakeColor;
+    });
+
+    function changeColor() {
+      snakeColorInput.value = getRandomColor();
+      // Mettre à jour la couleur du serpent dans le contexte de rendu
+      ctx.fillStyle = snakeColorInput.value;
+    }
+
+    function getRandomColor() {
+      const letters = "0123456789ABCDEF";
+      let color = "#";
+      for (let i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+      }
+      return color;
+    }
+
+    const boxSize = 20;
+    let snake = [{ x: 10, y: 10 }];
+    let food = { x: 5, y: 5 };
+    let direction = "right";
+    let score = 0;
+    let targetScore = 5; // Objectif de points initial
+
+    function draw() {
+      // Dessiner le fond du canvas
+      ctx.fillStyle = "#f0f0f0";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Dessiner le serpent
+      ctx.fillStyle = snakeColor;
+      for (let i = 0; i < snake.length; i++) {
+        ctx.fillRect(snake[i].x * boxSize, snake[i].y * boxSize, boxSize, boxSize);
+      }
+
+      // Dessiner la nourriture
+      ctx.fillStyle = "#f00";
+      ctx.fillRect(food.x * boxSize, food.y * boxSize, boxSize, boxSize);
+
+      // Afficher le score
+      ctx.fillStyle = "#61dafb";
+      ctx.font = "20px Arial";
+      ctx.fillText("Score: " + score, 10, 20);
+
+      // Afficher l objectif
+      ctx.fillText("Objectif: " + targetScore, 200, 20);
+    }
+
+    function move() {
+      let newHead = { x: snake[0].x, y: snake[0].y };
+
+      // Déplacer la tête du serpent en fonction de la direction
+      if (direction === "up") newHead.y--;
+      else if (direction === "down") newHead.y++;
+      else if (direction === "left") newHead.x--;
+      else if (direction === "right") newHead.x++;
+
+      // Faire passer le serpent à travers le côté opposé lorsque le bord est atteint
+      newHead.x = (newHead.x + canvas.width / boxSize) % (canvas.width / boxSize);
+      newHead.y = (newHead.y + canvas.height / boxSize) % (canvas.height / boxSize);
+
+      // Ajouter la nouvelle tête au début du serpent
+      snake.unshift(newHead);
+
+      // Vérifier si le serpent a mangé la nourriture
+      if (newHead.x === food.x && newHead.y === food.y) {
+        // Générer une nouvelle position pour la nourriture
+        food.x = Math.floor(Math.random() * (canvas.width / boxSize));
+        food.y = Math.floor(Math.random() * (canvas.height / boxSize));
+        score++;
+
+        // Vérifier si le joueur a atteint l objectif
+        if (score === targetScore) {
+          alert("Félicitations! Objectif atteint!");
+          resetGame();
+        }
+      } else {
+        // Supprimer la dernière partie du serpent si la nourriture n est pas mangée
+        snake.pop();
+      }
+    }
+
+    function resetGame() {
+      snake = [{ x: 10, y: 10 }];
+      direction = "right";
+      score = 0;
+      targetScore = 5; // Réinitialiser l objectif 
+    }
+
+    function gameLoop() {
+      draw();
+      move();
+      setTimeout(gameLoop, 100);
+    }
+
+    document.addEventListener("keydown", function (event) {
+      // Mettre à jour la direction en fonction de la touche appuyée
+      if (event.key === "ArrowUp" && direction !== "down") direction = "up";
+      else if (event.key === "ArrowDown" && direction !== "up") direction = "down";
+      else if (event.key === "ArrowLeft" && direction !== "right") direction = "left";
+      else if (event.key === "ArrowRight" && direction !== "left") direction = "right";
+    });
+
+    // Ajouter des événements tactiles pour le contrôle sur mobile
+    let touchStartX, touchStartY;
+
+    document.addEventListener("touchstart", function (event) {
+      touchStartX = event.touches[0].clientX;
+      touchStartY = event.touches[0].clientY;
+    });
+
+    document.addEventListener("touchend", function (event) {
+      const touchEndX = event.changedTouches[0].clientX;
+      const touchEndY = event.changedTouches[0].clientY;
+
+      const deltaX = touchEndX - touchStartX;
+      const deltaY = touchEndY - touchStartY;
+
+      // Déterminer la direction basée sur le déplacement tactile
+      if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        // Déplacement horizontal
+        if (deltaX > 0 && direction !== "left") direction = "right";
+        else if (deltaX < 0 && direction !== "right") direction = "left";
+      } else {
+        // Déplacement vertical
+        if (deltaY > 0 && direction !== "up") direction = "down";
+        else if (deltaY < 0 && direction !== "down") direction = "up";
+      }
+    });
+
+    function changeObjective() {
+      const newObjective = prompt("Entrez le nouvel objectif:");
+      if (newObjective !== null) {
+        targetScore = parseInt(newObjective) || targetScore; // Assurez-vous que la saisie est un nombre
+      }
+    }
+
+    gameLoop();
+  </script>
+</body>
+</html>
